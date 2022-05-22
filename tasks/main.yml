@@ -1,0 +1,32 @@
+---
+# tasks file for adrianjuhl.thycotic_cli
+
+- name: Setting facts
+  set_fact:
+    adrianjuhl__thycotic_cli__install_dir: "{{ adrianjuhl__thycotic_cli__system_bin_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}.d"
+
+- name: Setting facts
+  set_fact:
+    adrianjuhl__thycotic_cli__thycotic_cli_sh_file_path: "{{ adrianjuhl__thycotic_cli__install_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}.sh"
+    adrianjuhl__thycotic_cli__thycotic_cli_link_file_path: "{{ adrianjuhl__thycotic_cli__system_bin_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}"
+
+- name: Create thycotic_cli install directory
+  ansible.builtin.file:
+    dest: "{{ adrianjuhl__thycotic_cli__install_dir }}"
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Copy thycotic_cli.sh into place
+  copy:
+    src: thycotic_cli.sh
+    dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_sh_file_path }}"
+    mode: "0755"
+  become: true
+
+- name: Configure a link for thycotic_cli
+  ansible.builtin.file:
+    src: "{{ adrianjuhl__thycotic_cli__thycotic_cli_sh_file_path }}"
+    dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_link_file_path }}"
+    state: link
+  become: true

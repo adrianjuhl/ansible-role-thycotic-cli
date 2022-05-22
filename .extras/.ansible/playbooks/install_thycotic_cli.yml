@@ -1,0 +1,7 @@
+---
+- name: Install thycotic_cli
+  hosts: localhost
+  tasks:
+    - name: Install thycotic_cli
+      include_role:
+        name: adrianjuhl.thycotic_cli

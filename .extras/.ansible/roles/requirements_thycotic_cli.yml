@@ -1,0 +1,10 @@
+---
+# From ansible-galaxy (a release tag)
+- src: adrianjuhl.thycotic_cli
+  version: 0.1.0
+
+# From a branch from the github repo
+# - src: https://github.com/adrianjuhl/ansible-role-thycotic-cli
+#   scm: git
+#   version: 0.1.0-develop-1
+#   name: adrianjuhl.thycotic_cli

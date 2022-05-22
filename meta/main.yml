@@ -1,0 +1,24 @@
+---
+galaxy_info:
+  role_name: thycotic_cli
+  namespace: adrianjuhl
+  description: A utility script for interacting with thycotic on the command line
+  author: Adrian Juhl
+  license: MIT
+  min_ansible_version: 1.2
+  platforms:
+    - name: Debian
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+    - name: Fedora
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags: []
+
+dependencies: []
