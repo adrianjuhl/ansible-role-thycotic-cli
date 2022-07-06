@@ -35,10 +35,11 @@ Get a secret.
 
 get args:
   --secret_id=<id>        The ID of the secret to return (required)
-  --access_token=<token>  The API access token with which to access Thycotic (required if not otherwise provided, see below)
+  --field_id=<id>         The 'FieldId' of the 'SecretItem' of the secret to return (optional, recommended for secrets that have multiple secret items)
+  --access_token=<token>  The API access token with which to access Thycotic (optional, see notes below)
   --as_xml                Returns the secret's full XML structure
 
-If --access_token is not supplied, the environment variable THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN will be used.
+If --access_token is not supplied, the environment variable THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN will be used if it is defined, otherwise the user will be prompted for their credentials to thycotic.
 USAGE_TEXT
 }
 
@@ -48,6 +49,9 @@ usage_authenticate()
 Usage: $(basename "${BASH_SOURCE[0]}") authenticate
 
 Get an API access token.
+
+Use the following to save the token:
+$ export THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=\$($(basename "${BASH_SOURCE[0]}") authenticate)
 USAGE_TEXT
 }
 
@@ -62,11 +66,9 @@ main()
   case "${THYCOTIC_CLI_COMMAND}" in
     get)
       handle_command_get "${@}"
-      echo "${THYCOTIC_CLI_SECRET_VALUE}"
       ;;
     authenticate)
       handle_command_authenticate "${@}"
-      echo "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}"
       ;;
     *)
       msg "Error: Unknown command: ${THYCOTIC_CLI_COMMAND}"
@@ -86,6 +88,7 @@ handle_command_get()
     abort_script
   fi
   get_thycotic_secret
+  echo "${THYCOTIC_CLI_SECRET_VALUE}"
 }
 
 handle_command_authenticate()
@@ -93,6 +96,7 @@ handle_command_authenticate()
   parse_script_params_authenticate "${@}"
   THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=""
   get_thycotic_api_access_token
+  echo "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}"
 }
 
 get_thycotic_secret()
@@ -106,7 +110,11 @@ get_thycotic_secret()
   fi
   case ${THYCOTIC_CLI_GET_RESPONSE_TYPE} in
     "AS_VALUE")
-      THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem/s:Value" 2>/dev/null)
+      if [ -n "${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}" ]; then
+        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem[s:FieldId=${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}]/s:Value" 2>/dev/null)
+      else
+        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem/s:Value" 2>/dev/null)
+      fi
       ;;
     "AS_XML")
       THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --copy-of "/s:GetSecretResult/s:Secret" 2>/dev/null | xmlstarlet format 2>/dev/null)
@@ -197,6 +205,7 @@ parse_script_params_get()
   #msg "script params (get) (${#}) are: ${@}"
   # default values of variables set from params
   THYCOTIC_CLI_SECRET_ID=""
+  THYCOTIC_CLI_SECRET_ITEM_FIELD_ID=""
   THYCOTIC_CLI_GET_RESPONSE_TYPE="AS_VALUE"
   while [ "${#}" -gt 0 ]
   do
@@ -214,6 +223,9 @@ parse_script_params_get()
     case "${1-}" in
       --secret_id=*)
         THYCOTIC_CLI_SECRET_ID="${1#*=}"
+        ;;
+      --field_id=*)
+        THYCOTIC_CLI_SECRET_ITEM_FIELD_ID="${1#*=}"
         ;;
       --access_token=*)
         THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN="${1#*=}"
