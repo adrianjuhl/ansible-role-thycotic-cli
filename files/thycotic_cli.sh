@@ -101,9 +101,26 @@ handle_command_authenticate()
 
 get_thycotic_secret()
 {
+  local thycotic_get_secret_response
+  local thycotic_errors
+  local curl_thycotic_return_code
   get_thycotic_api_access_token
-  local thycotic_get_secret_response=$(curl ${THYCOTIC_CLI_CURL_VERBOSE} -s -H "Content-Type: application/x-www-form-urlencoded" -d "secretId=${THYCOTIC_CLI_SECRET_ID}&token=${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/GetSecretLegacy")
-  local thycotic_errors=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Errors" 2>/dev/null)
+  set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
+  catch_stdouterr thycotic_get_secret_response curl_thycotic_stderr curl_thycotic_get_secret
+  curl_thycotic_return_code="$?"
+  if [ "${THYCOTIC_CLI_VERBOSE}" == "true" ]; then
+    set -x
+  fi
+  if [ "${curl_thycotic_return_code}" -gt 0 ]; then
+    msg "Error: Failed to get secret."
+    msg "       Call to Thycotic server to get secret failed with return code: ${curl_thycotic_return_code}"
+    msg "       Error message from Thycotic:"
+    msg "----"
+    msg "${curl_thycotic_stderr}"
+    msg "----"
+    abort_script
+  fi
+  thycotic_errors=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Errors" 2>/dev/null)
   if [ -n "${thycotic_errors}" ]; then
     msg "Error: Failed to get secret ${THYCOTIC_CLI_SECRET_ID}. Error message from Thycotic: ${thycotic_errors}"
     abort_script
@@ -124,11 +141,28 @@ get_thycotic_secret()
 
 get_thycotic_api_access_token()
 {
+  local thycotic_authenticate_response
+  local thycotic_errors
+  local curl_thycotic_return_code
   if [ -z "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
     get_user_username
     get_user_password
-    local thycotic_authenticate_response=$(echo "username=${USER_USERNAME}&password=${USER_PASSWORD}&organization=&domain=uofa" | curl ${THYCOTIC_CLI_CURL_VERBOSE} -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate")
-    local thycotic_errors=$(echo "${thycotic_authenticate_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Errors" 2>/dev/null)
+    set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
+    catch_stdouterr thycotic_authenticate_response curl_thycotic_stderr curl_thycotic_authenticate
+    curl_thycotic_return_code="$?"
+    if [ "${THYCOTIC_CLI_VERBOSE}" == "true" ]; then
+      set -x
+    fi
+    if [ "${curl_thycotic_return_code}" -gt 0 ]; then
+      msg "Error: Failed to obtain Thycotic API Access Token."
+      msg "       Call to Thycotic server to authenticate failed with return code: ${curl_thycotic_return_code}"
+      msg "       Error message from Thycotic:"
+      msg "----"
+      msg "${curl_thycotic_stderr}"
+      msg "----"
+      abort_script
+    fi
+    thycotic_errors=$(echo "${thycotic_authenticate_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Errors" 2>/dev/null)
     if [ -n "${thycotic_errors}" ]; then
       msg "Error: Failed to obtain Thycotic API Access Token. Error message from Thycotic: ${thycotic_errors}"
       abort_script
@@ -156,6 +190,16 @@ get_user_password()
   echo -n "Please enter your Password for user $USER_USERNAME: " >&2
   read -sr USER_PASSWORD
   echo >&2
+}
+
+curl_thycotic_authenticate()
+{
+  echo "username=${USER_USERNAME}&password=${USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate"
+}
+
+curl_thycotic_get_secret()
+{
+  curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d "secretId=${THYCOTIC_CLI_SECRET_ID}&token=${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/GetSecretLegacy"
 }
 
 parse_script_params()
@@ -281,6 +325,33 @@ parse_script_params_authenticate()
     esac
     shift
   done
+}
+
+catch_stdouterr()
+  # Catch stdout and stderr from a command or function
+  # and store the content in named variables.
+  # See: https://stackoverflow.com/a/59592881
+  # and: https://stackoverflow.com/a/70735935
+  # Usage: catch_stdouterr stdout_var_name stderr_var_name command_or_function [ARG1 [ARG2 [... [ARGn]]]]
+{
+  {
+      IFS=$'\n' read -r -d '' "${1}";
+      IFS=$'\n' read -r -d '' "${2}";
+      (IFS=$'\n' read -r -d '' _ERRNO_; return ${_ERRNO_});
+  }\
+  < <(
+    (printf '\0%s\0%d\0' \
+      "$(
+        (
+          (
+            (
+              { ${3}; echo "${?}" 1>&3-; } | tr -d '\0' 1>&4-
+            ) 4>&2- 2>&1- | tr -d '\0' 1>&4-
+          ) 3>&1- | exit "$(cat)"
+        ) 4>&1-
+      )" "${?}" 1>&2
+    ) 2>&1
+  )
 }
 
 initialize()
