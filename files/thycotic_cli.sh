@@ -128,9 +128,9 @@ get_thycotic_secret()
   case ${THYCOTIC_CLI_GET_RESPONSE_TYPE} in
     "AS_VALUE")
       if [ -n "${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}" ]; then
-        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem[s:FieldId=${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}]/s:Value" 2>/dev/null)
+        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem[s:FieldId=${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}]/s:Value" 2>/dev/null | xmlstarlet unesc 2>/dev/null)
       else
-        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem/s:Value" 2>/dev/null)
+        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem/s:Value" 2>/dev/null | xmlstarlet unesc 2>/dev/null)
       fi
       ;;
     "AS_XML")

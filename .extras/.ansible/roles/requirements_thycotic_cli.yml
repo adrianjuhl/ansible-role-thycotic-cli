@@ -1,10 +1,10 @@
 ---
 # From ansible-galaxy (a release tag)
 - src: adrianjuhl.thycotic_cli
-  version: 0.3.0
+  version: 0.4.0
 
 # From a branch from the github repo
 #- src: https://github.com/adrianjuhl/ansible-role-thycotic-cli
 #  scm: git
-#  version: feature-improve-error-reporting
+#  version: feature-xml-unescape-secret-values
 #  name: adrianjuhl.thycotic_cli
