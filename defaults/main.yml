@@ -1,5 +1,5 @@
 ---
 # defaults file for thycotic_cli
 
-adrianjuhl__thycotic_cli__system_bin_dir: "/usr/local/bin"
+adrianjuhl__thycotic_cli__install_bin_dir: "/usr/local/bin"
 adrianjuhl__thycotic_cli__thycotic_cli_executable_name: "thycotic_cli"

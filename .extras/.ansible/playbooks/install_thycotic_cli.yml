@@ -5,3 +5,5 @@
     - name: Install thycotic_cli
       include_role:
         name: adrianjuhl.thycotic_cli
+        apply:
+          become: "{{ local_playbook__install_thycotic_cli__requires_become }}"

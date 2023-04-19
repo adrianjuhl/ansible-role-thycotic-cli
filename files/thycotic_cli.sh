@@ -5,9 +5,10 @@
 usage()
 {
   cat <<USAGE_TEXT
-Usage: $(basename "${BASH_SOURCE[0]}") [--help | -h] [--verbose | -v]
-                    [--thycotic_host_url=<url>]
-                    <command> [<args>]
+Usage: $(basename "${BASH_SOURCE[0]}")
+           [--thycotic_host_url=<url>]
+           [--help | -h] [--verbose | -v]
+           <command> [<args>]
 
 Interact with Thycotic from the command line.
 
@@ -16,9 +17,12 @@ Available commands:
   authenticate     Return an authentication token
 
 General options:
-  --thycotic_host_url  The base URL of the Thycotic API service (e.g. https:/my-thycotic-secret-server.com) (required if not otherwise provided, see below)
-  --help, -h           Print this help and exit
-  --verbose, -v        Print script debug info
+  --thycotic_host_url
+      The base URL of the Thycotic API service (e.g. https:/my-thycotic-secret-server.com) (required if not otherwise provided, see below)
+  --help, -h
+      Print this help and exit
+  --verbose, -v
+      Print script debug info
 
 If --thycotic_host_url is not supplied, the environment variable THYCOTIC_CLI_THYCOTIC_HOST_URL will be used.
 
@@ -34,10 +38,14 @@ Usage: $(basename "${BASH_SOURCE[0]}") get <args>
 Get a secret.
 
 get args:
-  --secret_id=<id>        The ID of the secret to return (required)
-  --field_id=<id>         The 'FieldId' of the 'SecretItem' of the secret to return (optional, recommended for secrets that have multiple secret items)
-  --access_token=<token>  The API access token with which to access Thycotic (optional, see notes below)
-  --as_xml                Returns the secret's full XML structure
+  --secret_id=<id>
+      The ID of the secret to return (required)
+  --field_id=<id>
+      The 'FieldId' of the 'SecretItem' of the secret to return (optional, recommended for secrets that have multiple secret items)
+  --access_token=<token>
+      The API access token with which to access Thycotic (optional, see notes below)
+  --as_xml
+      Returns the secret's full XML structure
 
 If --access_token is not supplied, the environment variable THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN will be used if it is defined, otherwise the user will be prompted for their credentials to thycotic.
 USAGE_TEXT
@@ -60,7 +68,7 @@ main()
   initialize
   parse_script_params "${@}"
   THYCOTIC_CLI_CURL_VERBOSE=""
-  if [ "${THYCOTIC_CLI_VERBOSE}" == "true" ]; then
+  if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
     THYCOTIC_CLI_CURL_VERBOSE=" -v "
   fi
   case "${THYCOTIC_CLI_COMMAND}" in
@@ -108,7 +116,7 @@ get_thycotic_secret()
   set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
   catch_stdouterr thycotic_get_secret_response curl_thycotic_stderr curl_thycotic_get_secret
   curl_thycotic_return_code="$?"
-  if [ "${THYCOTIC_CLI_VERBOSE}" == "true" ]; then
+  if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
     set -x
   fi
   if [ "${curl_thycotic_return_code}" -gt 0 ]; then
@@ -150,7 +158,7 @@ get_thycotic_api_access_token()
     set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
     catch_stdouterr thycotic_authenticate_response curl_thycotic_stderr curl_thycotic_authenticate
     curl_thycotic_return_code="$?"
-    if [ "${THYCOTIC_CLI_VERBOSE}" == "true" ]; then
+    if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
       set -x
     fi
     if [ "${curl_thycotic_return_code}" -gt 0 ]; then
@@ -207,7 +215,7 @@ parse_script_params()
   #msg "script params (${#}) are: ${@}"
   # default values of variables set from params
   THYCOTIC_CLI_COMMAND=""
-  THYCOTIC_CLI_VERBOSE="false"
+  THYCOTIC_CLI_VERBOSE="${FALSE_STRING}"
   while [ "${#}" -gt 0 ]
   do
     case "${1-}" in
@@ -217,7 +225,7 @@ parse_script_params()
         ;;
       --verbose | -v)
         set -x
-        THYCOTIC_CLI_VERBOSE="true"
+        THYCOTIC_CLI_VERBOSE="${TRUE_STRING}"
         ;;
       --thycotic_host_url=*)
         THYCOTIC_CLI_THYCOTIC_HOST_URL="${1#*=}"
@@ -356,9 +364,29 @@ catch_stdouterr()
 
 initialize()
 {
+  set -o pipefail
   THIS_SCRIPT_PROCESS_ID=$$
-  THIS_SCRIPT_DIRECTORY="$(dirname "$(readlink -f "${0}")")"
+  initialize_this_script_directory_variable
   initialize_abort_script_config
+  initialize_true_and_false_strings
+}
+
+initialize_this_script_directory_variable()
+{
+  # THIS_SCRIPT_DIRECTORY where this script resides.
+  # See: https://www.binaryphile.com/bash/2020/01/12/determining-the-location-of-your-script-in-bash.html
+  # See: https://stackoverflow.com/a/67149152
+  THIS_SCRIPT_DIRECTORY=$(cd "$(dirname -- "$BASH_SOURCE")"; cd -P -- "$(dirname "$(readlink -- "$BASH_SOURCE" || echo .)")"; pwd)
+}
+
+initialize_true_and_false_strings()
+{
+  # Bash doesn't have a native true/false, just strings and numbers,
+  # so this is as clear as it can be, using, for example:
+  # if [ "${my_boolean_var}" = "${TRUE_STRING}" ]; then
+  # where previously 'my_boolean_var' is set to either ${TRUE_STRING} or ${FALSE_STRING}
+  TRUE_STRING="true"
+  FALSE_STRING="false"
 }
 
 initialize_abort_script_config()
