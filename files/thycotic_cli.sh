@@ -7,7 +7,9 @@ usage()
   cat <<USAGE_TEXT
 Usage: $(basename "${BASH_SOURCE[0]}")
            [--thycotic_host_url=<url>]
-           [--help | -h] [--verbose | -v]
+           [--help | -h]
+           [--version]
+           [--verbose | -v]
            <command> [<args>]
 
 Interact with Thycotic from the command line.
@@ -18,9 +20,11 @@ Available commands:
 
 General options:
   --thycotic_host_url
-      The base URL of the Thycotic API service (e.g. https:/my-thycotic-secret-server.com) (required if not otherwise provided, see below)
+      The base URL of the Thycotic API service (e.g. https://my-thycotic-secret-server.com) (required if not otherwise provided, see below)
   --help, -h
       Print this help and exit
+  --version
+      Print version info and exit
   --verbose, -v
       Print script debug info
 
@@ -47,7 +51,13 @@ get args:
   --as_xml
       Returns the secret's full XML structure
 
-If --access_token is not supplied, the environment variable THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN will be used if it is defined, otherwise the user will be prompted for their credentials to thycotic.
+The API access token may alternatively be provided by setting the environment variable THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN.
+
+If the API access token isn't provided then the user will be prompted for their credentials to thycotic.
+
+If the user needs to be prompted for their credentials, the following environment variables are used if set:
+  THYCOTIC_CLI_GET_USERNAME_COMMAND    if set, the contained command is run to obtain the user's username
+  THYCOTIC_CLI_GET_PASSWORD_COMMAND    if set, the contained command is run to obtain the user's password
 USAGE_TEXT
 }
 
@@ -109,12 +119,9 @@ handle_command_authenticate()
 
 get_thycotic_secret()
 {
-  local thycotic_get_secret_response
-  local thycotic_errors
-  local curl_thycotic_return_code
   get_thycotic_api_access_token
   set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
-  catch_stdouterr thycotic_get_secret_response curl_thycotic_stderr curl_thycotic_get_secret
+  catch_stdouterr curl_thycotic_response curl_thycotic_stderr curl_thycotic_get_secret
   curl_thycotic_return_code="$?"
   if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
     set -x
@@ -128,7 +135,7 @@ get_thycotic_secret()
     msg "----"
     abort_script
   fi
-  thycotic_errors=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Errors" 2>/dev/null)
+  thycotic_errors=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Errors" 2>/dev/null)
   if [ -n "${thycotic_errors}" ]; then
     msg "Error: Failed to get secret ${THYCOTIC_CLI_SECRET_ID}. Error message from Thycotic: ${thycotic_errors}"
     abort_script
@@ -136,27 +143,28 @@ get_thycotic_secret()
   case ${THYCOTIC_CLI_GET_RESPONSE_TYPE} in
     "AS_VALUE")
       if [ -n "${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}" ]; then
-        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem[s:FieldId=${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}]/s:Value" 2>/dev/null | xmlstarlet unesc 2>/dev/null)
+        THYCOTIC_CLI_SECRET_VALUE=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem[s:FieldId=${THYCOTIC_CLI_SECRET_ITEM_FIELD_ID}]/s:Value" 2>/dev/null | xmlstarlet unesc 2>/dev/null)
       else
-        THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem/s:Value" 2>/dev/null | xmlstarlet unesc 2>/dev/null)
+        THYCOTIC_CLI_SECRET_VALUE=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Secret/s:Items/s:SecretItem/s:Value" 2>/dev/null | xmlstarlet unesc 2>/dev/null)
       fi
       ;;
     "AS_XML")
-      THYCOTIC_CLI_SECRET_VALUE=$(echo "${thycotic_get_secret_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --copy-of "/s:GetSecretResult/s:Secret" 2>/dev/null | xmlstarlet format 2>/dev/null)
+      THYCOTIC_CLI_SECRET_VALUE=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --copy-of "/s:GetSecretResult/s:Secret" 2>/dev/null | xmlstarlet format 2>/dev/null)
       ;;
   esac
 }
 
 get_thycotic_api_access_token()
 {
-  local thycotic_authenticate_response
-  local thycotic_errors
-  local curl_thycotic_return_code
+  if [ -n "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
+    # THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN has a non-empty value
+    validate_thycotic_api_access_token
+  fi
   if [ -z "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
     get_user_username
     get_user_password
     set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
-    catch_stdouterr thycotic_authenticate_response curl_thycotic_stderr curl_thycotic_authenticate
+    catch_stdouterr curl_thycotic_response curl_thycotic_stderr curl_thycotic_authenticate
     curl_thycotic_return_code="$?"
     if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
       set -x
@@ -170,14 +178,14 @@ get_thycotic_api_access_token()
       msg "----"
       abort_script
     fi
-    thycotic_errors=$(echo "${thycotic_authenticate_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Errors" 2>/dev/null)
+    thycotic_errors=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Errors" 2>/dev/null)
     if [ -n "${thycotic_errors}" ]; then
       msg "Error: Failed to obtain Thycotic API Access Token. Error message from Thycotic: ${thycotic_errors}"
       abort_script
     fi
-    THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=$(echo "${thycotic_authenticate_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Token")
+    THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Token")
     if [ -z "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
-      msg "Error: Failed to obtain Thycotic Access Token. Thycotic authentication response: ${thycotic_authenticate_response}"
+      msg "Error: Failed to obtain Thycotic Access Token. Thycotic authentication response: ${curl_thycotic_response}"
       abort_script
     fi
   fi
@@ -185,29 +193,81 @@ get_thycotic_api_access_token()
 
 get_user_username()
 {
-  # Prompt for username...
-  USER_USERNAME_DEFAULT="${THYCOTIC_CLI_USERNAME:-${USER}}"
-  echo -n "Please enter your Username [$USER_USERNAME_DEFAULT]: " >&2
-  read USER_USERNAME
-  USER_USERNAME="${USER_USERNAME:-$USER_USERNAME_DEFAULT}"
+  THYCOTIC_USER_USERNAME=""
+  if [ -n "${THYCOTIC_CLI_GET_USERNAME_COMMAND}" ]; then
+    THYCOTIC_USER_USERNAME=$(${THYCOTIC_CLI_GET_USERNAME_COMMAND})
+    last_command_return_code="$?"
+    if [ "${last_command_return_code}" -ne 0 ]; then
+      msg "Warning: The command contained in THYCOTIC_CLI_GET_USERNAME_COMMAND failed and won't be used."
+      THYCOTIC_USER_USERNAME=""
+    fi
+  fi
+  if [ ! -n "${THYCOTIC_USER_USERNAME}" ]; then
+    # Prompt for username...
+    THYCOTIC_USER_USERNAME_DEFAULT="${THYCOTIC_CLI_USERNAME:-${USER}}"
+    echo -n "Please enter your Username [$THYCOTIC_USER_USERNAME_DEFAULT]: " >&2
+    read THYCOTIC_USER_USERNAME
+    THYCOTIC_USER_USERNAME="${THYCOTIC_USER_USERNAME:-$THYCOTIC_USER_USERNAME_DEFAULT}"
+  fi
 }
 
 get_user_password()
 {
-  # Prompt for password...
-  echo -n "Please enter your Password for user $USER_USERNAME: " >&2
-  read -sr USER_PASSWORD
-  echo >&2
+  THYCOTIC_USER_PASSWORD=""
+  if [ -n "${THYCOTIC_CLI_GET_PASSWORD_COMMAND}" ]; then
+    THYCOTIC_USER_PASSWORD=$(${THYCOTIC_CLI_GET_PASSWORD_COMMAND})
+    last_command_return_code="$?"
+    if [ "${last_command_return_code}" -ne 0 ]; then
+      msg "Warning: The command contained in THYCOTIC_CLI_GET_PASSWORD_COMMAND failed and won't be used."
+      THYCOTIC_USER_PASSWORD=""
+    fi
+  fi
+  if [ ! -n "${THYCOTIC_USER_PASSWORD}" ]; then
+    # Prompt for password...
+    echo -n "Please enter your Password for user $THYCOTIC_USER_USERNAME: " >&2
+    read -sr THYCOTIC_USER_PASSWORD
+    echo >&2
+  fi
+}
+
+validate_thycotic_api_access_token()
+{
+  set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
+  catch_stdouterr curl_thycotic_response curl_thycotic_stderr curl_thycotic_get_token_is_valid
+  curl_thycotic_return_code="$?"
+  if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
+    set -x
+  fi
+  if [ "${curl_thycotic_return_code}" -gt 0 ]; then
+    msg "Error: Failed to check the validity of the Thycotic API Access Token."
+    msg "       Call to Thycotic server to check the validity of the access token failed with return code: ${curl_thycotic_return_code}"
+    msg "       Error message from Thycotic:"
+    msg "----"
+    msg "${curl_thycotic_stderr}"
+    msg "----"
+    abort_script
+  fi
+  thycotic_errors=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:TokenIsValidResult/s:Errors" 2>/dev/null)
+  if [ -n "${thycotic_errors}" ]; then
+    msg "Warning: The provided Thycotic API Access Token is invalid or expired and won't be used. (See: thycotic_cli authenticate --help)"
+    msg "         Token validation error messages: ${thycotic_errors}"
+    unset THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN
+  fi
 }
 
 curl_thycotic_authenticate()
 {
-  echo "username=${USER_USERNAME}&password=${USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate"
+  echo "username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate"
 }
 
 curl_thycotic_get_secret()
 {
   curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d "secretId=${THYCOTIC_CLI_SECRET_ID}&token=${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/GetSecretLegacy"
+}
+
+curl_thycotic_get_token_is_valid()
+{
+  curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d "token=${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/GetTokenIsValid"
 }
 
 parse_script_params()
@@ -226,6 +286,10 @@ parse_script_params()
       --verbose | -v)
         set -x
         THYCOTIC_CLI_VERBOSE="${TRUE_STRING}"
+        ;;
+      --version)
+        print_version_info
+        exit
         ;;
       --thycotic_host_url=*)
         THYCOTIC_CLI_THYCOTIC_HOST_URL="${1#*=}"
@@ -333,6 +397,11 @@ parse_script_params_authenticate()
     esac
     shift
   done
+}
+
+print_version_info()
+{
+  msg "thycotic_cli version 0.6.0"
 }
 
 catch_stdouterr()
