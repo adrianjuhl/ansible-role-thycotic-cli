@@ -196,7 +196,7 @@ get_thycotic_api_access_token()
       abort_script
     fi
     #THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Token")
-    THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=$(echo "${curl_thycotic_response}" | jq '.access_token')
+    THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=$(echo "${curl_thycotic_response}" | jq -r '.access_token')
     if [ -z "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
       msg "Error: Failed to obtain Thycotic Access Token. Thycotic authentication response: ${curl_thycotic_response}"
       abort_script
