@@ -176,7 +176,7 @@ get_thycotic_api_access_token()
       abort_script
     fi
 
-    API_CALL_RESPONSE_ACTUAL=${curl_thycotic_response}
+    API_CALL_RESPONSE=${curl_thycotic_response}
     API_CALL_HTTP_STATUS_ACTUAL=${curl_thycotic_stderr}
     API_CALL_HTTP_STATUS_EXPECTED="200"
     msg "API_CALL_RESPONSE: ${API_CALL_RESPONSE}"
@@ -270,7 +270,7 @@ validate_thycotic_api_access_token()
 curl_thycotic_authenticate()
 {
   #echo "username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate"
-  echo "grant_type=password&username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/oauth2/token"
+  echo "grant_type=password&username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v --silent --write-out "%{stderr}%{http_code}" -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/oauth2/token"
 }
 
 curl_thycotic_get_secret()
