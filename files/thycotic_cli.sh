@@ -168,14 +168,31 @@ get_thycotic_api_access_token()
     catch_stdouterr_post_actions
     if [ "${curl_thycotic_return_code}" -gt 0 ]; then
       msg "Error: Failed to obtain Thycotic API Access Token."
-      msg "       Call to Thycotic server to authenticate failed with return code: ${curl_thycotic_return_code}"
-      msg "       Error message from Thycotic:"
+      msg "       The command to call the Thycotic server to authenticate failed with return code: ${curl_thycotic_return_code}"
+      msg "       Command error message:"
       msg "----"
       msg "${curl_thycotic_stderr}"
       msg "----"
       abort_script
     fi
-    thycotic_errors=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Errors" 2>/dev/null)
+
+    API_CALL_RESPONSE_ACTUAL=${curl_thycotic_response}
+    API_CALL_HTTP_STATUS_ACTUAL=${curl_thycotic_stderr}
+    API_CALL_HTTP_STATUS_EXPECTED="200"
+    msg "API_CALL_RESPONSE: ${API_CALL_RESPONSE}"
+    msg "API_CALL_HTTP_STATUS_ACTUAL: ${API_CALL_HTTP_STATUS_ACTUAL}"
+    if [ "${API_CALL_HTTP_STATUS_ACTUAL}" != "${API_CALL_HTTP_STATUS_EXPECTED}" ]; then
+      msg "Error: Failed to obtain Thycotic API Access Token."
+      msg "       Call to Thycotic server to authenticate failed with HTTP status code: ${API_CALL_HTTP_STATUS_ACTUAL} (expected ${API_CALL_HTTP_STATUS_EXPECTED})"
+      msg "       API call response follows:"
+      msg "--------"
+      msg "${API_CALL_RESPONSE_ACTUAL}"
+      msg "--------"
+      abort_script
+    fi
+
+    #thycotic_errors=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:AuthenticateResult/s:Errors" 2>/dev/null)
+    thycotic_errors=$(echo "${curl_thycotic_response}" | jq '.error'
     if [ -n "${thycotic_errors}" ]; then
       msg "Error: Failed to obtain Thycotic API Access Token. Error message from Thycotic: ${thycotic_errors}"
       abort_script
