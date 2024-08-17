@@ -159,6 +159,8 @@ get_thycotic_api_access_token()
     # THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN has a non-empty value
     msg "THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN has a value - validating it..."
     validate_thycotic_api_access_token
+  else
+    msg "THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN does not have a value >>>${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}<<<"
   fi
   if [ -z "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
     get_user_username
