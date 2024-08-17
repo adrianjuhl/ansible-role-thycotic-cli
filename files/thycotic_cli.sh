@@ -127,13 +127,34 @@ get_thycotic_secret()
   catch_stdouterr_post_actions
   if [ "${curl_thycotic_return_code}" -gt 0 ]; then
     msg "Error: Failed to get secret."
-    msg "       Call to Thycotic server to get secret failed with return code: ${curl_thycotic_return_code}"
-    msg "       Error message from Thycotic:"
+    msg "       The command to call the Thycotic server failed with return code: ${curl_thycotic_return_code}"
+    msg "       Command error message:"
     msg "----"
     msg "${curl_thycotic_stderr}"
     msg "----"
     abort_script
+
+
+
+    #msg "Error: Failed to get secret."
+    #msg "       Call to Thycotic server to get secret failed with return code: ${curl_thycotic_return_code}"
+    #msg "       Error message from Thycotic:"
+    #msg "----"
+    #msg "${curl_thycotic_stderr}"
+    #msg "----"
+    #abort_script
   fi
+
+    msg
+    msg "in get_thycotic_secret"
+    API_CALL_RESPONSE=${curl_thycotic_response}
+    API_CALL_HTTP_STATUS_ACTUAL=${curl_thycotic_stderr}
+    API_CALL_HTTP_STATUS_EXPECTED="200"
+    msg "API_CALL_RESPONSE: ${API_CALL_RESPONSE}"
+    msg "API_CALL_HTTP_STATUS_ACTUAL: ${API_CALL_HTTP_STATUS_ACTUAL}"
+    msg
+
+
   thycotic_errors=$(echo "${curl_thycotic_response}" | xmlstarlet sel -N s="urn:thesecretserver.com" --template --value-of "/s:GetSecretResult/s:Errors" 2>/dev/null)
   if [ -n "${thycotic_errors}" ]; then
     msg "Error: Failed to get secret ${THYCOTIC_CLI_SECRET_ID}. Error message from Thycotic: ${thycotic_errors}"
@@ -171,7 +192,7 @@ get_thycotic_api_access_token()
     catch_stdouterr_post_actions
     if [ "${curl_thycotic_return_code}" -gt 0 ]; then
       msg "Error: Failed to obtain Thycotic API Access Token."
-      msg "       The command to call the Thycotic server to authenticate failed with return code: ${curl_thycotic_return_code}"
+      msg "       The command to call the Thycotic server failed with return code: ${curl_thycotic_return_code}"
       msg "       Command error message:"
       msg "----"
       msg "${curl_thycotic_stderr}"
