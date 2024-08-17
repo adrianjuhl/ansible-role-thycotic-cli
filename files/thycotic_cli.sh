@@ -264,6 +264,14 @@ validate_thycotic_api_access_token()
     msg "         Token validation error messages: ${thycotic_errors}"
     unset THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN
   fi
+
+    msg
+    msg "In validate_thycotic_api_access_token"
+    API_CALL_RESPONSE=${curl_thycotic_response}
+    API_CALL_HTTP_STATUS_ACTUAL=${curl_thycotic_stderr}
+    msg "API_CALL_RESPONSE: ${API_CALL_RESPONSE}"
+    msg "API_CALL_HTTP_STATUS_ACTUAL: ${API_CALL_HTTP_STATUS_ACTUAL}"
+    msg
 }
 
 curl_thycotic_authenticate()
