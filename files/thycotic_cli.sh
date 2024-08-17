@@ -270,7 +270,7 @@ validate_thycotic_api_access_token()
 curl_thycotic_authenticate()
 {
   #echo "username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate"
-  echo "grant_type=password&username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v --silent --write-out "%{stderr}%{http_code}" -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/oauth2/token"
+  echo "grant_type=password&username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl --silent --write-out "%{stderr}%{http_code}" -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/oauth2/token"
 }
 
 curl_thycotic_get_secret()
