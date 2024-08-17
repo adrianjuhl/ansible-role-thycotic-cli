@@ -186,8 +186,13 @@ get_thycotic_api_access_token()
       msg "       Call to Thycotic server to authenticate failed with HTTP status code: ${API_CALL_HTTP_STATUS_ACTUAL} (expected ${API_CALL_HTTP_STATUS_EXPECTED})"
       msg "       API call response follows:"
       msg "--------"
-      msg "${API_CALL_RESPONSE_ACTUAL}"
+      msg "${API_CALL_RESPONSE}"
       msg "--------"
+      if [ "${API_CALL_HTTP_STATUS_ACTUAL}" == "400" ]; then
+        thycotic_error=$(echo "${curl_thycotic_response}" | jq '.error')
+        msg "       Error message from Thycotic:"
+        msg "       ${thycotic_error}"
+      fi
       abort_script
     fi
 
