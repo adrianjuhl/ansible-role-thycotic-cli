@@ -157,6 +157,7 @@ get_thycotic_api_access_token()
 {
   if [ -n "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
     # THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN has a non-empty value
+    msg "THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN has a value - validating it..."
     validate_thycotic_api_access_token
   fi
   if [ -z "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
