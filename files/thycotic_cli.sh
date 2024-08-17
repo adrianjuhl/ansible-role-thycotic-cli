@@ -6,11 +6,12 @@ usage()
 {
   cat <<USAGE_TEXT
 Usage: $(basename "${BASH_SOURCE[0]}")
-           [--thycotic_host_url=<url>]
-           [--help | -h]
-           [--version]
-           [--verbose | -v]
-           <command> [<args>]
+Usage:  ${THIS_SCRIPT_NAME}
+            [--thycotic_host_url=<url>]
+            [--help | -h]
+            [--version]
+            [--script_debug]
+            <command> [<args>]
 
 Interact with Thycotic from the command line.
 
@@ -19,25 +20,25 @@ Available commands:
   authenticate     Return an authentication token
 
 General options:
-  --thycotic_host_url
-      The base URL of the Thycotic API service (e.g. https://my-thycotic-secret-server.com) (required if not otherwise provided, see below)
-  --help, -h
-      Print this help and exit
-  --version
-      Print version info and exit
-  --verbose, -v
-      Print script debug info
+    --thycotic_host_url
+        The base URL of the Thycotic API service (e.g. https://my-thycotic-secret-server.com) (required if not otherwise provided, see below)
+    --help, -h
+        Print this help and exit.
+    --version
+        Print version info and exit.
+    --script_debug
+        Print script debug info.
 
 If --thycotic_host_url is not supplied, the environment variable THYCOTIC_CLI_THYCOTIC_HOST_URL will be used.
 
-See '$(basename "${BASH_SOURCE[0]}") <command> --help' for help on a specific command.
+See '${THIS_SCRIPT_NAME} <command> --help' for help on a specific command.
 USAGE_TEXT
 }
 
 usage_get()
 {
   cat <<USAGE_TEXT
-Usage: $(basename "${BASH_SOURCE[0]}") get <args>
+Usage: ${THIS_SCRIPT_NAME} get <args>
 
 Get a secret.
 
@@ -64,12 +65,12 @@ USAGE_TEXT
 usage_authenticate()
 {
   cat <<USAGE_TEXT
-Usage: $(basename "${BASH_SOURCE[0]}") authenticate
+Usage: ${THIS_SCRIPT_NAME} authenticate
 
 Get an API access token.
 
 Use the following to save the token:
-$ export THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=\$($(basename "${BASH_SOURCE[0]}") authenticate)
+$ export THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN=\$(${THIS_SCRIPT_NAME} authenticate)
 USAGE_TEXT
 }
 
@@ -78,7 +79,7 @@ main()
   initialize
   parse_script_params "${@}"
   THYCOTIC_CLI_CURL_VERBOSE=""
-  if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
+  if [ "${SCRIPT_DEBUG_OPTION}" == "${TRUE_STRING}" ]; then
     THYCOTIC_CLI_CURL_VERBOSE=" -v "
   fi
   case "${THYCOTIC_CLI_COMMAND}" in
@@ -120,12 +121,10 @@ handle_command_authenticate()
 get_thycotic_secret()
 {
   get_thycotic_api_access_token
-  set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
+  catch_stdouterr_pre_actions
   catch_stdouterr curl_thycotic_response curl_thycotic_stderr curl_thycotic_get_secret
   curl_thycotic_return_code="$?"
-  if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
-    set -x
-  fi
+  catch_stdouterr_post_actions
   if [ "${curl_thycotic_return_code}" -gt 0 ]; then
     msg "Error: Failed to get secret."
     msg "       Call to Thycotic server to get secret failed with return code: ${curl_thycotic_return_code}"
@@ -163,12 +162,10 @@ get_thycotic_api_access_token()
   if [ -z "${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" ]; then
     get_user_username
     get_user_password
-    set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
+    catch_stdouterr_pre_actions
     catch_stdouterr curl_thycotic_response curl_thycotic_stderr curl_thycotic_authenticate
     curl_thycotic_return_code="$?"
-    if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
-      set -x
-    fi
+    catch_stdouterr_post_actions
     if [ "${curl_thycotic_return_code}" -gt 0 ]; then
       msg "Error: Failed to obtain Thycotic API Access Token."
       msg "       Call to Thycotic server to authenticate failed with return code: ${curl_thycotic_return_code}"
@@ -232,12 +229,10 @@ get_user_password()
 
 validate_thycotic_api_access_token()
 {
-  set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality. 
+  catch_stdouterr_pre_actions
   catch_stdouterr curl_thycotic_response curl_thycotic_stderr curl_thycotic_get_token_is_valid
   curl_thycotic_return_code="$?"
-  if [ "${THYCOTIC_CLI_VERBOSE}" == "${TRUE_STRING}" ]; then
-    set -x
-  fi
+  catch_stdouterr_post_actions
   if [ "${curl_thycotic_return_code}" -gt 0 ]; then
     msg "Error: Failed to check the validity of the Thycotic API Access Token."
     msg "       Call to Thycotic server to check the validity of the access token failed with return code: ${curl_thycotic_return_code}"
@@ -257,7 +252,8 @@ validate_thycotic_api_access_token()
 
 curl_thycotic_authenticate()
 {
-  echo "username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate"
+  #echo "username=${THYCOTIC_USER_USERNAME}&password=${THYCOTIC_USER_PASSWORD}&organization=&domain=uofa" | curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d @- --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/Authenticate"
+  echo "dummy"
 }
 
 curl_thycotic_get_secret()
@@ -272,10 +268,10 @@ curl_thycotic_get_token_is_valid()
 
 parse_script_params()
 {
-  #msg "script params (${#}) are: ${@}"
+  msg "script params (${#}) are: ${@}"
   # default values of variables set from params
+  SCRIPT_DEBUG_OPTION="${FALSE_STRING}"
   THYCOTIC_CLI_COMMAND=""
-  THYCOTIC_CLI_VERBOSE="${FALSE_STRING}"
   while [ "${#}" -gt 0 ]
   do
     case "${1-}" in
@@ -283,9 +279,9 @@ parse_script_params()
         usage
         exit
         ;;
-      --verbose | -v)
+      --script_debug)
         set -x
-        THYCOTIC_CLI_VERBOSE="${TRUE_STRING}"
+        SCRIPT_DEBUG_OPTION="${TRUE_STRING}"
         ;;
       --version)
         print_version_info
@@ -369,7 +365,7 @@ parse_script_params_get()
 
 parse_script_params_authenticate()
 {
-  #msg "script params (authenticate) (${#}) are: ${@}"
+  msg "script params (authenticate) (${#}) are: ${@}"
   # default values of variables set from params
   while [ "${#}" -gt 0 ]
   do
@@ -401,7 +397,7 @@ parse_script_params_authenticate()
 
 print_version_info()
 {
-  msg "thycotic_cli version 0.6.0"
+  msg "thycotic_cli version 0.7.0"
 }
 
 catch_stdouterr()
@@ -409,12 +405,21 @@ catch_stdouterr()
   # and store the content in named variables.
   # See: https://stackoverflow.com/a/59592881
   # and: https://stackoverflow.com/a/70735935
-  # Usage: catch_stdouterr stdout_var_name stderr_var_name command_or_function [ARG1 [ARG2 [... [ARGn]]]]
+  # Usage:
+  #   catch_stdouterr stdout_var_name stderr_var_name command_or_function [ARG1 [ARG2 [... [ARGn]]]]
+  # Usage pattern:
+  #   local last_command_return_code
+  #   catch_stdouterr_pre_actions
+  #   catch_stdouterr CURL_BLAH_STDOUT CURL_BLAH_STDERR curl_blah
+  #   last_command_return_code="$?"
+  #   catch_stdouterr_post_actions
+  #   if [ "${last_command_return_code}" -ne 0 ]; then
+  #     ...
 {
   {
       IFS=$'\n' read -r -d '' "${1}";
       IFS=$'\n' read -r -d '' "${2}";
-      (IFS=$'\n' read -r -d '' _ERRNO_; return ${_ERRNO_});
+      (IFS=$'\n' read -r -d '' _ERRNO_; return "${_ERRNO_}");
   }\
   < <(
     (printf '\0%s\0%d\0' \
@@ -431,21 +436,61 @@ catch_stdouterr()
   )
 }
 
+catch_stdouterr_pre_actions()
+{
+  set +x # Temporarily switch off command logging as it alters the resulting output from the function call and breaks the functionality.
+}
+
+catch_stdouterr_post_actions()
+{
+  if [ "${SCRIPT_DEBUG_OPTION}" == "${TRUE_STRING}" ]; then
+    set -x
+  fi
+}
+
 initialize()
 {
   set -o pipefail
   THIS_SCRIPT_PROCESS_ID=$$
-  initialize_this_script_directory_variable
   initialize_abort_script_config
+  initialize_this_script_directory_variable
+  initialize_this_script_name_variable
   initialize_true_and_false_strings
 }
 
 initialize_this_script_directory_variable()
 {
-  # THIS_SCRIPT_DIRECTORY where this script resides.
+  # Determines the value of THIS_SCRIPT_DIRECTORY, the absolute directory name where this script resides.
   # See: https://www.binaryphile.com/bash/2020/01/12/determining-the-location-of-your-script-in-bash.html
   # See: https://stackoverflow.com/a/67149152
-  THIS_SCRIPT_DIRECTORY=$(cd "$(dirname -- "$BASH_SOURCE")"; cd -P -- "$(dirname "$(readlink -- "$BASH_SOURCE" || echo .)")"; pwd)
+  local last_command_return_code
+  THIS_SCRIPT_DIRECTORY=$(cd "$(dirname -- "${BASH_SOURCE[0]}")" || exit 1; cd -P -- "$(dirname "$(readlink -- "${BASH_SOURCE[0]}" || echo .)")" || exit 1; pwd)
+  last_command_return_code="$?"
+  if [ "${last_command_return_code}" -gt 0 ]; then
+    # This should not occur for the above command pipeline.
+    msg
+    msg "Error: Failed to determine the value of this_script_directory."
+    msg
+    abort_script
+  fi
+}
+
+initialize_this_script_name_variable()
+{
+  local path_to_invoked_script
+  local default_script_name
+  path_to_invoked_script="${BASH_SOURCE[0]}"
+  default_script_name=""
+  if grep -q '/dev/fd' <(dirname "${path_to_invoked_script}"); then
+    # The script was invoked via process substitution
+    if [ -z "${default_script_name}" ]; then
+      THIS_SCRIPT_NAME="<script invoked via file descriptor (process substitution) and no default name set>"
+    else
+      THIS_SCRIPT_NAME="${default_script_name}"
+    fi
+  else
+    THIS_SCRIPT_NAME="$(basename "${path_to_invoked_script}")"
+  fi
 }
 
 initialize_true_and_false_strings()
