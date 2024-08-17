@@ -275,6 +275,8 @@ validate_thycotic_api_access_token()
     msg "API_CALL_RESPONSE: ${API_CALL_RESPONSE}"
     msg "API_CALL_HTTP_STATUS_ACTUAL: ${API_CALL_HTTP_STATUS_ACTUAL}"
     msg
+    msg "THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN: ${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}"
+    msg
 }
 
 curl_thycotic_authenticate()
