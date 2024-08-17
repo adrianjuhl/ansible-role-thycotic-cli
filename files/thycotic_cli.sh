@@ -309,7 +309,7 @@ curl_thycotic_authenticate()
 curl_thycotic_get_secret()
 {
   #curl -v -s -H "Content-Type: application/x-www-form-urlencoded" -d "secretId=${THYCOTIC_CLI_SECRET_ID}&token=${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/webservices/sswebservice.asmx/GetSecretLegacy"
-  curl --silent --write-out "%{stderr}%{http_code}" -H "Authorization: Bearer ${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/v2/secrets/${THYCOTIC_CLI_SECRET_ID}"
+  curl --silent --write-out "%{stderr}%{http_code}" -H "Authorization: Bearer ${THYCOTIC_CLI_THYCOTIC_API_ACCESS_TOKEN}" --url "${THYCOTIC_CLI_THYCOTIC_HOST_URL}/api/v2/secrets/${THYCOTIC_CLI_SECRET_ID}"
 }
 
 curl_thycotic_get_token_is_valid()
