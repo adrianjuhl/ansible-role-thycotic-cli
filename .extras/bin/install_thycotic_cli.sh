@@ -8,7 +8,7 @@ usage()
 Usage:  ${THIS_SCRIPT_NAME}
             [--install_bin_dir=<dir>]
             [--thycotic_cli_executable_name=<name>]
-            [--thycotic_cli_script_version=<version>]
+            [--thycotic_cli_version=<version>]
             [--thycotic_cli_version_ref_type=<tags|heads>]
             [--requires_become=<true|false>]
             [--dry_run]
