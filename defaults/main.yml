@@ -1,5 +1,16 @@
 ---
 # defaults file for thycotic_cli
 
+# The version of the script to install.
+adrianjuhl__thycotic_cli__version: "0.8.0-alpha-1"
+
+# The ref type within the git repository of the version to be installed.
+# Valid values are "tags" or "heads".
+# The default of "tags" should be suitable for installing all realease versions of the script as
+# each of these will be given a tag.
+# The value "heads" can be used in the case that a version from a branch is to be installed.
+adrianjuhl__thycotic_cli__ref_type: "tags" # or "heads"
+
 adrianjuhl__thycotic_cli__install_bin_dir: "/usr/local/bin"
+
 adrianjuhl__thycotic_cli__thycotic_cli_executable_name: "thycotic_cli"

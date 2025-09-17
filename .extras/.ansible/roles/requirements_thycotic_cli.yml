@@ -6,5 +6,5 @@
 # From a branch from the github repo
 - src: https://github.com/adrianjuhl/ansible-role-thycotic-cli
   scm: git
-  version: 0.7.0-develop-switch-from-soap-to-rest-WIP-1
+  version: 0.8.0-develop-move-script-to-dedicated-repo-WIP-1
   name: adrianjuhl.thycotic_cli
