@@ -8,6 +8,8 @@ usage()
 Usage:  ${THIS_SCRIPT_NAME}
             [--install_bin_dir=<dir>]
             [--thycotic_cli_executable_name=<name>]
+            [--thycotic_cli_script_version=<version>]
+            [--thycotic_cli_version_ref_type=<tags|heads>]
             [--requires_become=<true|false>]
             [--dry_run]
             [--show_diff]
@@ -21,6 +23,12 @@ Available options:
         The directory where thycotic_cli is to be installed. Defaults to "/usr/local/bin".
     --thycotic_cli_executable_name=<name>
         The name that the executable is to be named. Defaults to "thycotic_cli".
+    --thycotic_cli_version=<version>
+        The version of the script to install.
+        Defaults to "0.8.0-alpha-1".
+    --thycotic_cli_version_ref_type<tags|heads>
+        The ref type of the version.
+        Defaults to "tags".
     --requires_become=<true|false>
         Is privilege escalation required? Defaults to true.
     --dry_run
@@ -63,6 +71,8 @@ install_thycotic_cli()
     --connection=local \
     --extra-vars="adrianjuhl__thycotic_cli__install_bin_dir=${INSTALL_BIN_DIR}" \
     --extra-vars="adrianjuhl__thycotic_cli__thycotic_cli_executable_name=${THYCOTIC_CLI_EXECUTABLE_NAME}" \
+    --extra-vars="adrianjuhl__thycotic_cli__version=${THYCOTIC_CLI_VERSION}" \
+    --extra-vars="adrianjuhl__thycotic_cli__ref_type=${THYCOTIC_CLI_VERSION_REF_TYPE}" \
     --extra-vars="local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}" \
     ${THIS_SCRIPT_DIRECTORY}/../.ansible/playbooks/install_thycotic_cli.yml
 }
@@ -73,6 +83,8 @@ parse_script_params()
   # default values of variables set from params
   INSTALL_BIN_DIR="/usr/local/bin"
   THYCOTIC_CLI_EXECUTABLE_NAME="thycotic_cli"
+  THYCOTIC_CLI_VERSION="0.8.0-alpha-1"
+  THYCOTIC_CLI_VERSION_REF_TYPE="tags"
   REQUIRES_BECOME="${TRUE_STRING}"
   REQUIRES_BECOME_PARAM=""
   ANSIBLE_CHECK_MODE_ARGUMENT=""
@@ -86,6 +98,12 @@ parse_script_params()
         ;;
       --thycotic_cli_executable_name=*)
         THYCOTIC_CLI_EXECUTABLE_NAME="${1#*=}"
+        ;;
+      --thycotic_cli_version=*)
+        CAPTURE_SCRIPT_VERSION="${1#*=}"
+        ;;
+      --thycotic_cli_version_ref_type=*)
+        CAPTURE_SCRIPT_VERSION_REF_TYPE="${1#*=}"
         ;;
       --requires_become=*)
         REQUIRES_BECOME_PARAM="${1#*=}"
