@@ -100,10 +100,10 @@ parse_script_params()
         THYCOTIC_CLI_EXECUTABLE_NAME="${1#*=}"
         ;;
       --thycotic_cli_version=*)
-        CAPTURE_SCRIPT_VERSION="${1#*=}"
+        THYCOTIC_CLI_VERSION="${1#*=}"
         ;;
       --thycotic_cli_version_ref_type=*)
-        CAPTURE_SCRIPT_VERSION_REF_TYPE="${1#*=}"
+        THYCOTIC_CLI_VERSION_REF_TYPE="${1#*=}"
         ;;
       --requires_become=*)
         REQUIRES_BECOME_PARAM="${1#*=}"
