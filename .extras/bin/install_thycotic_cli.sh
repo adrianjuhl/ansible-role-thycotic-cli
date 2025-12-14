@@ -83,7 +83,7 @@ parse_script_params()
   # default values of variables set from params
   INSTALL_BIN_DIR="/usr/local/bin"
   THYCOTIC_CLI_EXECUTABLE_NAME="thycotic_cli"
-  THYCOTIC_CLI_VERSION="0.8.0-alpha-1"
+  THYCOTIC_CLI_VERSION="0.8.0-rc-1"
   THYCOTIC_CLI_VERSION_REF_TYPE="tags"
   REQUIRES_BECOME="${TRUE_STRING}"
   REQUIRES_BECOME_PARAM=""
@@ -149,57 +149,6 @@ parse_script_params()
   #echo "REQUIRES_BECOME_PARAM is: ${REQUIRES_BECOME_PARAM}"
   #echo "REQUIRES_BECOME is: ${REQUIRES_BECOME}"
 }
-
-#initialize()
-#{
-#  set -o pipefail
-#  THIS_SCRIPT_PROCESS_ID=$$
-#  initialize_this_script_directory_variable
-#  initialize_abort_script_config
-#  initialize_true_and_false_strings
-#}
-#
-#initialize_this_script_directory_variable()
-#{
-#  # THIS_SCRIPT_DIRECTORY where this script resides.
-#  # See: https://www.binaryphile.com/bash/2020/01/12/determining-the-location-of-your-script-in-bash.html
-#  # See: https://stackoverflow.com/a/67149152
-#  THIS_SCRIPT_DIRECTORY=$(cd "$(dirname -- "$BASH_SOURCE")"; cd -P -- "$(dirname "$(readlink -- "$BASH_SOURCE" || echo .)")"; pwd)
-#}
-#
-#initialize_true_and_false_strings()
-#{
-#  # Bash doesn't have a native true/false, just strings and numbers,
-#  # so this is as clear as it can be, using, for example:
-#  # if [ "${my_boolean_var}" = "${TRUE_STRING}" ]; then
-#  # where previously 'my_boolean_var' is set to either ${TRUE_STRING} or ${FALSE_STRING}
-#  TRUE_STRING="true"
-#  FALSE_STRING="false"
-#}
-#
-#initialize_abort_script_config()
-#{
-#  # Exit shell script from within the script or from any subshell within this script - adapted from:
-#  # https://cravencode.com/post/essentials/exit-shell-script-from-subshell/
-#  # Exit with exit status 1 if this (top level process of this script) receives the SIGUSR1 signal.
-#  # See also the abort_script() function which sends the signal.
-#  trap "exit 1" SIGUSR1
-#}
-#
-#abort_script()
-#{
-#  echo >&2 "aborting..."
-#  kill -SIGUSR1 ${THIS_SCRIPT_PROCESS_ID}
-#  exit
-#}
-#
-#msg()
-#{
-#  echo >&2 -e "${@}"
-#}
-#
-## Main entry into the script - call the main() function
-#main "${@}"
 
 initialize()
 {
