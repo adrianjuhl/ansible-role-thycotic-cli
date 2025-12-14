@@ -51,10 +51,15 @@ main()
 
 install_thycotic_cli()
 {
-  export ANSIBLE_ROLES_PATH=${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/:${HOME}/.ansible/roles/
+  export ANSIBLE_ROLES_PATH="${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/:${HOME}/.ansible/roles/"
 
   # Install the dependencies of the playbook:
-  ANSIBLE_ROLES_PATH=${HOME}/.ansible/roles/ ansible-galaxy install --role-file=${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/requirements_thycotic_cli.yml --force
+  ANSIBLE_ROLES_PATH="${HOME}/.ansible/roles/" \
+      ansible-galaxy \
+      role \
+      install \
+      "--role-file=${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/requirements_thycotic_cli.yml" \
+      --force
   last_command_return_code="$?"
   if [ "${last_command_return_code}" -ne 0 ]; then
     msg "Error: ansible-galaxy role installations failed."
