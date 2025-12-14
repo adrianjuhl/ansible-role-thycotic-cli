@@ -2,7 +2,7 @@
 # defaults file for thycotic_cli
 
 # The version of the script to install.
-adrianjuhl__thycotic_cli__version: "0.8.0-rc-1"
+adrianjuhl__thycotic_cli__version: "0.8.0-rc-2"
 
 # The ref type within the git repository of the version to be installed.
 # Valid values are "tags" or "heads".
