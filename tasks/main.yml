@@ -4,8 +4,9 @@
 - name: Setting facts
   set_fact:
     adrianjuhl__thycotic_cli__install_dir:                 "{{ adrianjuhl__thycotic_cli__install_bin_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}.d"
-    adrianjuhl__thycotic_cli__thycotic_cli_sh_file_path:   "{{ adrianjuhl__thycotic_cli__install_bin_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}.d/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}.sh"
-    adrianjuhl__thycotic_cli__thycotic_cli_link_file_path: "{{ adrianjuhl__thycotic_cli__install_bin_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}"
+    adrianjuhl__thycotic_cli__thycotic_cli_script_file_path:   "{{ adrianjuhl__thycotic_cli__install_bin_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}.d/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}.sh"
+    adrianjuhl__thycotic_cli__thycotic_cli_script_link_file_path: "{{ adrianjuhl__thycotic_cli__install_bin_dir }}/{{ adrianjuhl__thycotic_cli__thycotic_cli_executable_name }}"
+    adrianjuhl__thycotic_cli__thycotic_cli_script_source_url: "https://raw.githubusercontent.com/adrianjuhl/adrianjuhl-shell-thycotic-cli/refs/{{ adrianjuhl__thycotic_cli__ref_type }}/{{ adrianjuhl__thycotic_cli__version }}/bin/thycotic_cli.sh"
 
 - name: Create thycotic_cli install directory
   ansible.builtin.file:
@@ -13,14 +14,16 @@
     state: directory
     mode: "0755"
 
-- name: Copy thycotic_cli.sh into place
-  copy:
-    src: thycotic_cli.sh
-    dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_sh_file_path }}"
+- name: "Copy script into place"
+  ansible.builtin.get_url:
+    url: "{{ adrianjuhl__thycotic_cli__thycotic_cli_script_source_url }}"
+    dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_script_file_path }}"
     mode: "0755"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Configure a link for thycotic_cli
   ansible.builtin.file:
-    src: "{{ adrianjuhl__thycotic_cli__thycotic_cli_sh_file_path }}"
-    dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_link_file_path }}"
+    src: "{{ adrianjuhl__thycotic_cli__thycotic_cli_script_file_path }}"
+    dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_script_link_file_path }}"
     state: link
+  ignore_errors: "{{ ansible_check_mode }}"

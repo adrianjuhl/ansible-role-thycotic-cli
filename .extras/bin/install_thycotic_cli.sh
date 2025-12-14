@@ -5,29 +5,40 @@
 usage()
 {
   cat <<USAGE_TEXT
-Usage: $(basename "${BASH_SOURCE[0]}")
-           [--install_bin_dir=<dir>]
-           [--thycotic_cli_executable_name=<name>]
-           [--requires_become=<true|false>]
-           [--dry_run] [--show_diff] [--help | -h] [--verbose | -v]
+Usage:  ${THIS_SCRIPT_NAME}
+            [--install_bin_dir=<dir>]
+            [--thycotic_cli_executable_name=<name>]
+            [--thycotic_cli_version=<version>]
+            [--thycotic_cli_version_ref_type=<tags|heads>]
+            [--requires_become=<true|false>]
+            [--dry_run]
+            [--show_diff]
+            [--help | -h]
+            [--script_debug]
 
 Install thycotic_cli script.
 
 Available options:
-  --install_bin_dir=<dir>
-      The directory where thycotic_cli is to be installed. Defaults to "/usr/local/bin".
-  --thycotic_cli_executable_name=<name>
-      The name that the executable is to be named. Defaults to "thycotic_cli".
-  --requires_become=<true|false>
-      Is privilege escalation required? Defaults to true.
-  --dry_run
-      Run the role without making changes.
-  --show_diff
-      Run the role in diff mode.
-  --help, -h
-      Print this help and exit.
-  --verbose, -v
-      Print script debug info.
+    --install_bin_dir=<dir>
+        The directory where thycotic_cli is to be installed. Defaults to "/usr/local/bin".
+    --thycotic_cli_executable_name=<name>
+        The name that the executable is to be named. Defaults to "thycotic_cli".
+    --thycotic_cli_version=<version>
+        The version of the script to install.
+        Defaults to "0.8.0".
+    --thycotic_cli_version_ref_type<tags|heads>
+        The ref type of the version.
+        Defaults to "tags".
+    --requires_become=<true|false>
+        Is privilege escalation required? Defaults to true.
+    --dry_run
+        Run the role without making changes.
+    --show_diff
+        Run the role in diff mode.
+    --help, -h
+        Print this help and exit.
+    --script_debug
+        Print script debug info.
 USAGE_TEXT
 }
 
@@ -40,27 +51,44 @@ main()
 
 install_thycotic_cli()
 {
-  export ANSIBLE_ROLES_PATH=${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/:${HOME}/.ansible/roles/
+  export ANSIBLE_ROLES_PATH="${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/:${HOME}/.ansible/roles/"
 
   # Install the dependencies of the playbook:
-  ANSIBLE_ROLES_PATH=${HOME}/.ansible/roles/ ansible-galaxy install --role-file=${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/requirements_thycotic_cli.yml --force
+  ANSIBLE_ROLES_PATH="${HOME}/.ansible/roles/" \
+      ansible-galaxy \
+      role \
+      install \
+      "--role-file=${THIS_SCRIPT_DIRECTORY}/../.ansible/roles/requirements_thycotic_cli.yml" \
+      --force
   last_command_return_code="$?"
   if [ "${last_command_return_code}" -ne 0 ]; then
     msg "Error: ansible-galaxy role installations failed."
     abort_script
   fi
 
+  ANSIBLE_VERBOSE_ARGUMENT="-vv"
+
   ASK_BECOME_PASS_OPTION=""
   if [ "${REQUIRES_BECOME}" = "${TRUE_STRING}" ]; then
     ASK_BECOME_PASS_OPTION="--ask-become-pass"
   fi
 
-  ansible-playbook ${ANSIBLE_CHECK_MODE_ARGUMENT} ${ANSIBLE_DIFF_MODE_ARGUMENT} ${ASK_BECOME_PASS_OPTION} -v \
-    --inventory="localhost," \
-    --connection=local \
-    --extra-vars="adrianjuhl__thycotic_cli__install_bin_dir=${INSTALL_BIN_DIR}" \
-    --extra-vars="adrianjuhl__thycotic_cli__thycotic_cli_executable_name=${THYCOTIC_CLI_EXECUTABLE_NAME}" \
-    --extra-vars="local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}" \
+  construct_command_options_array \
+    "playbook_command_options_array" \
+    "${ANSIBLE_CHECK_MODE_ARGUMENT}" \
+    "${ANSIBLE_DIFF_MODE_ARGUMENT}" \
+    "${ANSIBLE_VERBOSE_ARGUMENT}" \
+    "${ASK_BECOME_PASS_OPTION}" \
+    "--inventory=localhost," \
+    "--connection=local" \
+    "--extra-vars=adrianjuhl__thycotic_cli__install_bin_dir=${INSTALL_BIN_DIR}" \
+    "--extra-vars=adrianjuhl__thycotic_cli__thycotic_cli_executable_name=${THYCOTIC_CLI_EXECUTABLE_NAME}" \
+    "--extra-vars=adrianjuhl__thycotic_cli__version=${THYCOTIC_CLI_VERSION}" \
+    "--extra-vars=adrianjuhl__thycotic_cli__ref_type=${THYCOTIC_CLI_VERSION_REF_TYPE}" \
+    "--extra-vars=local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}"
+
+  ansible-playbook \
+    "${playbook_command_options_array[@]}" \
     ${THIS_SCRIPT_DIRECTORY}/../.ansible/playbooks/install_thycotic_cli.yml
 }
 
@@ -70,10 +98,13 @@ parse_script_params()
   # default values of variables set from params
   INSTALL_BIN_DIR="/usr/local/bin"
   THYCOTIC_CLI_EXECUTABLE_NAME="thycotic_cli"
+  THYCOTIC_CLI_VERSION="0.8.0"
+  THYCOTIC_CLI_VERSION_REF_TYPE="tags"
   REQUIRES_BECOME="${TRUE_STRING}"
   REQUIRES_BECOME_PARAM=""
   ANSIBLE_CHECK_MODE_ARGUMENT=""
   ANSIBLE_DIFF_MODE_ARGUMENT=""
+  SCRIPT_DEBUG_OPTION="${FALSE_STRING}"
   while [ "${#}" -gt 0 ]
   do
     case "${1-}" in
@@ -82,6 +113,12 @@ parse_script_params()
         ;;
       --thycotic_cli_executable_name=*)
         THYCOTIC_CLI_EXECUTABLE_NAME="${1#*=}"
+        ;;
+      --thycotic_cli_version=*)
+        THYCOTIC_CLI_VERSION="${1#*=}"
+        ;;
+      --thycotic_cli_version_ref_type=*)
+        THYCOTIC_CLI_VERSION_REF_TYPE="${1#*=}"
         ;;
       --requires_become=*)
         REQUIRES_BECOME_PARAM="${1#*=}"
@@ -96,8 +133,9 @@ parse_script_params()
         usage
         exit
         ;;
-      --verbose | -v)
+      --script_debug)
         set -x
+        SCRIPT_DEBUG_OPTION="${TRUE_STRING}"
         ;;
       -?*)
         msg "Error: Unknown parameter: ${1}"
@@ -127,21 +165,90 @@ parse_script_params()
   #echo "REQUIRES_BECOME is: ${REQUIRES_BECOME}"
 }
 
+construct_command_options_array()
+  # Creates an array as named with the first parameter and populates it with the
+  # non-blank/non-empty values of the remaining parameters.
+  # Parameters:
+  #   ${1}     - the name of the array
+  #   ${2}...  - the values to populate the array with (the blank/empty values will be ignored)
+  # For example:
+  #   construct_command_options_array "command_options_array" "value1" "value2"
+  #   declare -p command_options_array
+  #   echo "command_options_array: ${command_options_array[*]}"
+  #   for value in "${command_options_array[@]}"; do echo "value is: ${value}"; done
+  #   mvn \
+  #     "${command_options_array[@]}"
+{
+  # shellcheck disable=SC2064
+  trap "$(shopt -p extglob)" RETURN  # Restores the extglob shopt when this fuction returns.
+  shopt -s extglob
+  local -n __construct_command_options_array__command_options_array="${1}"
+  shift
+  __construct_command_options_array__command_options_array=()
+  for element in "${@}"
+  do
+    trimmed_element="${element}"
+    trimmed_element="${trimmed_element##+([[:space:]])}" # trim leading whitespace
+    trimmed_element="${trimmed_element%%+([[:space:]])}" # time trailing whitespace
+    if [ -n "${trimmed_element}" ]; then
+      __construct_command_options_array__command_options_array+=("${trimmed_element}")
+    fi
+  done
+}
+
 initialize()
 {
   set -o pipefail
   THIS_SCRIPT_PROCESS_ID=$$
-  initialize_this_script_directory_variable
   initialize_abort_script_config
+  initialize_this_script_directory_variable
+  initialize_this_script_name_variable
   initialize_true_and_false_strings
+#  initialize_function_capture_stdout_and_stderr
+}
+
+initialize_abort_script_config()
+{
+  # Exit shell script from within the script or from any subshell within this script - adapted from:
+  # https://cravencode.com/post/essentials/exit-shell-script-from-subshell/
+  # Exit with exit status 1 if this (top level process of this script) receives the SIGUSR1 signal.
+  # See also the abort_script() function which sends the signal.
+  trap "exit 1" SIGUSR1
 }
 
 initialize_this_script_directory_variable()
 {
-  # THIS_SCRIPT_DIRECTORY where this script resides.
+  # Determines the value of THIS_SCRIPT_DIRECTORY, the absolute directory name where this script resides.
   # See: https://www.binaryphile.com/bash/2020/01/12/determining-the-location-of-your-script-in-bash.html
   # See: https://stackoverflow.com/a/67149152
-  THIS_SCRIPT_DIRECTORY=$(cd "$(dirname -- "$BASH_SOURCE")"; cd -P -- "$(dirname "$(readlink -- "$BASH_SOURCE" || echo .)")"; pwd)
+  local last_command_return_code
+  THIS_SCRIPT_DIRECTORY=$(cd "$(dirname -- "${BASH_SOURCE[0]}")" || exit 1; cd -P -- "$(dirname "$(readlink -- "${BASH_SOURCE[0]}" || echo .)")" || exit 1; pwd)
+  last_command_return_code="$?"
+  if [ "${last_command_return_code}" -gt 0 ]; then
+    # This should not occur for the above command pipeline.
+    msg
+    msg "Error: Failed to determine the value of this_script_directory."
+    msg
+    abort_script
+  fi
+}
+
+initialize_this_script_name_variable()
+{
+  local path_to_invoked_script
+  local default_script_name
+  path_to_invoked_script="${BASH_SOURCE[0]}"
+  default_script_name=""
+  if grep -q '/dev/fd' <(dirname "${path_to_invoked_script}"); then
+    # The script was invoked via process substitution
+    if [ -z "${default_script_name}" ]; then
+      THIS_SCRIPT_NAME="<script invoked via file descriptor (process substitution) and no default name set>"
+    else
+      THIS_SCRIPT_NAME="${default_script_name}"
+    fi
+  else
+    THIS_SCRIPT_NAME="$(basename "${path_to_invoked_script}")"
+  fi
 }
 
 initialize_true_and_false_strings()
@@ -154,14 +261,16 @@ initialize_true_and_false_strings()
   FALSE_STRING="false"
 }
 
-initialize_abort_script_config()
-{
-  # Exit shell script from within the script or from any subshell within this script - adapted from:
-  # https://cravencode.com/post/essentials/exit-shell-script-from-subshell/
-  # Exit with exit status 1 if this (top level process of this script) receives the SIGUSR1 signal.
-  # See also the abort_script() function which sends the signal.
-  trap "exit 1" SIGUSR1
-}
+#initialize_function_capture_stdout_and_stderr()
+#{
+#  local capture_stdout_and_stderr_script_path
+#  capture_stdout_and_stderr_script_path="/usr/local/bin/capture_stdout_and_stderr.d/${capture_stdout_and_stderr_version}/capture_stdout_and_stderr.sh"
+#  if [ -f "${capture_stdout_and_stderr_script_path}" ]; then
+#    . "${capture_stdout_and_stderr_script_path}"
+#  else
+#    echo >&2 "[WARNING] capture_stdout_and_stderr script file was not found (${capture_stdout_and_stderr_script_path})."
+#  fi
+#}
 
 abort_script()
 {
