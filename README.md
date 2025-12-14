@@ -48,6 +48,23 @@ $ thycotic_cli get --secret_id=1234
 
 ## Role Variables
 
+Role variables and their defaults.
+
+**version**
+
+    adrianjuhl__thycotic_cli__version: "0.8.0"
+
+The version of the thycotic_cli script to install.
+
+**ref_type**
+
+    adrianjuhl__thycotic_cli__ref_type: "tags"
+
+The ref type within the adrianjuhl-shell-thycotic-cli git repository of the version of thycotic_cli to be installed.
+Valid values are "tags" or "heads".
+The default of "tags" should be suitable for installing all realease versions of the script as each of these will be given a tag.
+The value "heads" can be used in the case that a version from a branch is to be installed.
+
 **install_bin_dir**
 
     adrianjuhl__thycotic_cli__install_bin_dir: "/usr/local/bin"
@@ -64,7 +81,10 @@ The name that the executable is to be installed as.
 
 ## Dependencies
 
-None.
+The thycotic_cli script itself requires the following:
+* curl
+* jq
+* [capture-stdout-and-stderr](https://github.com/adrianjuhl/adrianjuhl-shell-capture-stdout-and-stderr)
 
 ## Example Playbook
 ```
