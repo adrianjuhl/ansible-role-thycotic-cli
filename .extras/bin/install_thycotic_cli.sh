@@ -25,7 +25,7 @@ Available options:
         The name that the executable is to be named. Defaults to "thycotic_cli".
     --thycotic_cli_version=<version>
         The version of the script to install.
-        Defaults to "0.8.0-alpha-1".
+        Defaults to "0.8.0".
     --thycotic_cli_version_ref_type<tags|heads>
         The ref type of the version.
         Defaults to "tags".
@@ -98,7 +98,7 @@ parse_script_params()
   # default values of variables set from params
   INSTALL_BIN_DIR="/usr/local/bin"
   THYCOTIC_CLI_EXECUTABLE_NAME="thycotic_cli"
-  THYCOTIC_CLI_VERSION="0.8.0-rc-2"
+  THYCOTIC_CLI_VERSION="0.8.0-rc-3"
   THYCOTIC_CLI_VERSION_REF_TYPE="tags"
   REQUIRES_BECOME="${TRUE_STRING}"
   REQUIRES_BECOME_PARAM=""
