@@ -61,7 +61,7 @@ install_thycotic_cli()
     abort_script
   fi
 
-  ANSIBLE_VERBOSE_ARGUMENT="-v"
+  ANSIBLE_VERBOSE_ARGUMENT="-vv"
 
   ASK_BECOME_PASS_OPTION=""
   if [ "${REQUIRES_BECOME}" = "${TRUE_STRING}" ]; then
