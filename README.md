@@ -43,7 +43,6 @@ $ thycotic_cli get --secret_id=1234
 
 ## Requirements
 
-* Requires `xmlstarlet` to be installed on the server.
 * This role requires root access by default (unless configured to install into a directory owned by the ansible user - see Role Variables section), so either run it in a playbook with a global `become: true`, or invoke the role with `become: true`.
 
 ## Role Variables
