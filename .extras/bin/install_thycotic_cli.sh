@@ -107,7 +107,7 @@ parse_script_params()
   # default values of variables set from params
   INSTALL_BIN_DIR="/usr/local/bin"
   THYCOTIC_CLI_EXECUTABLE_NAME="thycotic_cli"
-  THYCOTIC_CLI_VERSION="0.8.0-rc-1"
+  THYCOTIC_CLI_VERSION="0.8.0-rc-2"
   THYCOTIC_CLI_VERSION_REF_TYPE="tags"
   REQUIRES_BECOME="${TRUE_STRING}"
   REQUIRES_BECOME_PARAM=""
