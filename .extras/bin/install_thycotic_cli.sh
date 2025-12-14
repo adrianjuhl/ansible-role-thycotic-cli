@@ -82,23 +82,9 @@ install_thycotic_cli()
     "--extra-vars=adrianjuhl__thycotic_cli__ref_type=${THYCOTIC_CLI_VERSION_REF_TYPE}" \
     "--extra-vars=local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}"
 
-  echo >&2 "ansible-playbook command options: ${playbook_command_options_array[@]}"
-
-#  abort_script
-
   ansible-playbook \
     "${playbook_command_options_array[@]}" \
     ${THIS_SCRIPT_DIRECTORY}/../.ansible/playbooks/install_thycotic_cli.yml
-
-#  ansible-playbook ${ANSIBLE_CHECK_MODE_ARGUMENT} ${ANSIBLE_DIFF_MODE_ARGUMENT} ${ASK_BECOME_PASS_OPTION} -v \
-#    --inventory="localhost," \
-#    --connection=local \
-#    --extra-vars="adrianjuhl__thycotic_cli__install_bin_dir=${INSTALL_BIN_DIR}" \
-#    --extra-vars="adrianjuhl__thycotic_cli__thycotic_cli_executable_name=${THYCOTIC_CLI_EXECUTABLE_NAME}" \
-#    --extra-vars="adrianjuhl__thycotic_cli__version=${THYCOTIC_CLI_VERSION}" \
-#    --extra-vars="adrianjuhl__thycotic_cli__ref_type=${THYCOTIC_CLI_VERSION_REF_TYPE}" \
-#    --extra-vars="local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}" \
-#    ${THIS_SCRIPT_DIRECTORY}/../.ansible/playbooks/install_thycotic_cli.yml
 }
 
 parse_script_params()
@@ -213,7 +199,7 @@ initialize()
   initialize_this_script_directory_variable
   initialize_this_script_name_variable
   initialize_true_and_false_strings
-  initialize_function_capture_stdout_and_stderr
+#  initialize_function_capture_stdout_and_stderr
 }
 
 initialize_abort_script_config()
@@ -270,16 +256,16 @@ initialize_true_and_false_strings()
   FALSE_STRING="false"
 }
 
-initialize_function_capture_stdout_and_stderr()
-{
-  local capture_stdout_and_stderr_script_path
-  capture_stdout_and_stderr_script_path="/usr/local/bin/capture_stdout_and_stderr.d/${capture_stdout_and_stderr_version}/capture_stdout_and_stderr.sh"
-  if [ -f "${capture_stdout_and_stderr_script_path}" ]; then
-    . "${capture_stdout_and_stderr_script_path}"
-  else
-    echo >&2 "[WARNING] capture_stdout_and_stderr script file was not found (${capture_stdout_and_stderr_script_path})."
-  fi
-}
+#initialize_function_capture_stdout_and_stderr()
+#{
+#  local capture_stdout_and_stderr_script_path
+#  capture_stdout_and_stderr_script_path="/usr/local/bin/capture_stdout_and_stderr.d/${capture_stdout_and_stderr_version}/capture_stdout_and_stderr.sh"
+#  if [ -f "${capture_stdout_and_stderr_script_path}" ]; then
+#    . "${capture_stdout_and_stderr_script_path}"
+#  else
+#    echo >&2 "[WARNING] capture_stdout_and_stderr script file was not found (${capture_stdout_and_stderr_script_path})."
+#  fi
+#}
 
 abort_script()
 {
