@@ -21,14 +21,9 @@
     mode: "0755"
   ignore_errors: "{{ ansible_check_mode }}"
 
-#- name: Copy thycotic_cli.sh into place
-#  copy:
-#    src: thycotic_cli.sh
-#    dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_sh_file_path }}"
-#    mode: "0755"
-
 - name: Configure a link for thycotic_cli
   ansible.builtin.file:
     src: "{{ adrianjuhl__thycotic_cli__thycotic_cli_script_file_path }}"
     dest: "{{ adrianjuhl__thycotic_cli__thycotic_cli_script_link_file_path }}"
     state: link
+  ignore_errors: "{{ ansible_check_mode }}"

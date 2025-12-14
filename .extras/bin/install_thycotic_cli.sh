@@ -61,20 +61,44 @@ install_thycotic_cli()
     abort_script
   fi
 
+  ANSIBLE_VERBOSE_ARGUMENT="-vvv"
+
   ASK_BECOME_PASS_OPTION=""
   if [ "${REQUIRES_BECOME}" = "${TRUE_STRING}" ]; then
     ASK_BECOME_PASS_OPTION="--ask-become-pass"
   fi
 
-  ansible-playbook ${ANSIBLE_CHECK_MODE_ARGUMENT} ${ANSIBLE_DIFF_MODE_ARGUMENT} ${ASK_BECOME_PASS_OPTION} -v \
-    --inventory="localhost," \
-    --connection=local \
-    --extra-vars="adrianjuhl__thycotic_cli__install_bin_dir=${INSTALL_BIN_DIR}" \
-    --extra-vars="adrianjuhl__thycotic_cli__thycotic_cli_executable_name=${THYCOTIC_CLI_EXECUTABLE_NAME}" \
-    --extra-vars="adrianjuhl__thycotic_cli__version=${THYCOTIC_CLI_VERSION}" \
-    --extra-vars="adrianjuhl__thycotic_cli__ref_type=${THYCOTIC_CLI_VERSION_REF_TYPE}" \
-    --extra-vars="local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}" \
+  construct_command_options_array \
+    "playbook_command_options_array" \
+    "${ANSIBLE_CHECK_MODE_ARGUMENT}" \
+    "${ANSIBLE_DIFF_MODE_ARGUMENT}" \
+    "${ANSIBLE_VERBOSE_ARGUMENT}" \
+    "${ASK_BECOME_PASS_OPTION}" \
+    "--inventory=localhost," \
+    "--connection=local" \
+    "--extra-vars=adrianjuhl__thycotic_cli__install_bin_dir=${INSTALL_BIN_DIR}" \
+    "--extra-vars=adrianjuhl__thycotic_cli__thycotic_cli_executable_name=${THYCOTIC_CLI_EXECUTABLE_NAME}" \
+    "--extra-vars=adrianjuhl__thycotic_cli__version=${THYCOTIC_CLI_VERSION}" \
+    "--extra-vars=adrianjuhl__thycotic_cli__ref_type=${THYCOTIC_CLI_VERSION_REF_TYPE}" \
+    "--extra-vars=local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}"
+
+  echo >&2 "ansible-playbook command options: ${playbook_command_options_array[@]}"
+
+#  abort_script
+
+  ansible-playbook \
+    "${playbook_command_options_array[@]}" \
     ${THIS_SCRIPT_DIRECTORY}/../.ansible/playbooks/install_thycotic_cli.yml
+
+#  ansible-playbook ${ANSIBLE_CHECK_MODE_ARGUMENT} ${ANSIBLE_DIFF_MODE_ARGUMENT} ${ASK_BECOME_PASS_OPTION} -v \
+#    --inventory="localhost," \
+#    --connection=local \
+#    --extra-vars="adrianjuhl__thycotic_cli__install_bin_dir=${INSTALL_BIN_DIR}" \
+#    --extra-vars="adrianjuhl__thycotic_cli__thycotic_cli_executable_name=${THYCOTIC_CLI_EXECUTABLE_NAME}" \
+#    --extra-vars="adrianjuhl__thycotic_cli__version=${THYCOTIC_CLI_VERSION}" \
+#    --extra-vars="adrianjuhl__thycotic_cli__ref_type=${THYCOTIC_CLI_VERSION_REF_TYPE}" \
+#    --extra-vars="local_playbook__install_thycotic_cli__requires_become=${REQUIRES_BECOME}" \
+#    ${THIS_SCRIPT_DIRECTORY}/../.ansible/playbooks/install_thycotic_cli.yml
 }
 
 parse_script_params()
@@ -148,6 +172,37 @@ parse_script_params()
   esac
   #echo "REQUIRES_BECOME_PARAM is: ${REQUIRES_BECOME_PARAM}"
   #echo "REQUIRES_BECOME is: ${REQUIRES_BECOME}"
+}
+
+construct_command_options_array()
+  # Creates an array as named with the first parameter and populates it with the
+  # non-blank/non-empty values of the remaining parameters.
+  # Parameters:
+  #   ${1}     - the name of the array
+  #   ${2}...  - the values to populate the array with (the blank/empty values will be ignored)
+  # For example:
+  #   construct_command_options_array "command_options_array" "value1" "value2"
+  #   declare -p command_options_array
+  #   echo "command_options_array: ${command_options_array[*]}"
+  #   for value in "${command_options_array[@]}"; do echo "value is: ${value}"; done
+  #   mvn \
+  #     "${command_options_array[@]}"
+{
+  # shellcheck disable=SC2064
+  trap "$(shopt -p extglob)" RETURN  # Restores the extglob shopt when this fuction returns.
+  shopt -s extglob
+  local -n __construct_command_options_array__command_options_array="${1}"
+  shift
+  __construct_command_options_array__command_options_array=()
+  for element in "${@}"
+  do
+    trimmed_element="${element}"
+    trimmed_element="${trimmed_element##+([[:space:]])}" # trim leading whitespace
+    trimmed_element="${trimmed_element%%+([[:space:]])}" # time trailing whitespace
+    if [ -n "${trimmed_element}" ]; then
+      __construct_command_options_array__command_options_array+=("${trimmed_element}")
+    fi
+  done
 }
 
 initialize()
